@@ -284,7 +284,11 @@ function mostrarDashboard(){
   renderAll();
 }
 
-if(TOKEN) carregarDados();
+function tokenValido(token){
+  try{const p=JSON.parse(atob(token.split('.')[1]));return p.exp*1000>Date.now();}catch{return false;}
+}
+if(TOKEN && tokenValido(TOKEN)){carregarDados();}
+else if(TOKEN){localStorage.removeItem('oikos_token');TOKEN='';}
 
 // ── NAVEGAÇÃO ─────────────────────────────────────────────────────
 function sp(id,btn){
