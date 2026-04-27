@@ -173,6 +173,7 @@ tbody tr:hover td{background:var(--bg2)}
       <div class="page" id="page-contratos">
         <div class="card"><div class="ct">Evolução dos contratos</div><div class="cw" style="height:280px"><canvas id="c-cont-evo" role="img" aria-label="Evolução dos contratos"></canvas></div></div>
         <div class="card"><div class="ct">Carteira completa</div><div class="tw"><table id="t-cont"></table></div></div>
+        <div class="card" id="card-mensal" style="display:none"><div class="ct">Compromisso mensal recorrente</div><div class="tw"><table id="t-mensal"></table></div></div>
       </div>
 
       <!-- MÚTUOS -->
@@ -378,29 +379,65 @@ function renderAPagar(){
 function renderContratos(){
   const ativos=DADOS.ativos||[];
   dc('c-cont-evo');
-  if(ativos.length){charts['c-cont-evo']=new Chart(document.getElementById('c-cont-evo'),{type:'bar',data:{labels:ativos.map(a=>a.nome.split(' (')[0]),datasets:[{data:ativos.map(a=>Math.round(a.pct||0)),backgroundColor:CORES,borderRadius:5,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{min:0,max:100,ticks:{color:'#4e4d60',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#8e8da0',font:{size:10}},grid:{display:false}}}}});}
+  if(ativos.length){charts['c-cont-evo']=new Chart(document.getElementById('c-cont-evo'),{type:'bar',data:{labels:ativos.map(a=>(a.nome||a.nm||'').split(' (')[0]),datasets:[{data:ativos.map(a=>Math.round(a.pct||0)),backgroundColor:CORES,borderRadius:5,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw}% pago`}}},scales:{x:{min:0,max:100,ticks:{color:'#4e4d60',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#8e8da0',font:{size:10}},grid:{display:false}}}}});}
   const tbl=document.getElementById('t-cont');
   tbl.innerHTML='<thead><tr><th>Ativo</th><th>Tipo</th><th>Total</th><th>Pago</th><th>Saldo</th><th>% Pago</th></tr></thead>';
   const tb=document.createElement('tbody');let tT=0,tP=0,tS=0;
-  ativos.forEach(a=>{tT+=a.total||0;tP+=a.pago||0;tS+=a.saldo||0;const pct=a.pct||0;const tr=document.createElement('tr');tr.innerHTML=`<td><span style="font-weight:500">${a.nome}</span>${a.nota?`<br><span style="font-size:9px;color:var(--t3)">${a.nota}</span>`:''}</td><td><span class="bdg bc">${a.tipo||''}</span></td><td style="font-family:'DM Mono',monospace;font-size:11px">${fmtF(a.total||0)}</td><td style="color:var(--gr);font-family:'DM Mono',monospace;font-size:11px">${fmtF(a.pago||0)}</td><td style="color:${(a.saldo||0)>0?'var(--am)':'var(--gr)'};font-family:'DM Mono',monospace;font-size:11px">${fmtF(a.saldo||0)}</td><td><div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;min-width:38px">${pct.toFixed(1)}%</span><div class="pbar" style="width:60px"><div class="pfill" style="width:${pct}%;background:var(--ac)"></div></div></div></td>`;tb.appendChild(tr);});
+  ativos.forEach(a=>{const nm=a.nome||a.nm||'';tT+=a.total||0;tP+=a.pago||0;tS+=a.saldo||0;const pct=a.pct||0;const tr=document.createElement('tr');tr.innerHTML=`<td><span style="font-weight:500">${nm}</span>${a.nota?`<br><span style="font-size:9px;color:var(--t3)">${a.nota}</span>`:''}</td><td><span class="bdg bc">${a.tipo||''}</span></td><td style="font-family:'DM Mono',monospace;font-size:11px">${fmtF(a.total||0)}</td><td style="color:var(--gr);font-family:'DM Mono',monospace;font-size:11px">${fmtF(a.pago||0)}</td><td style="color:${(a.saldo||0)>0?'var(--am)':'var(--gr)'};font-family:'DM Mono',monospace;font-size:11px">${fmtF(a.saldo||0)}</td><td><div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;min-width:38px">${pct.toFixed(1)}%</span><div class="pbar" style="width:60px"><div class="pfill" style="width:${pct}%;background:var(--ac)"></div></div></div></td>`;tb.appendChild(tr);});
   if(ativos.length){const tr=document.createElement('tr');tr.className='tot-row';tr.innerHTML=`<td>Total portfólio</td><td></td><td style="font-family:'DM Mono',monospace;font-size:11px">${fmtF(tT)}</td><td style="color:var(--gr);font-family:'DM Mono',monospace;font-size:11px">${fmtF(tP)}</td><td style="color:var(--am);font-family:'DM Mono',monospace;font-size:11px">${fmtF(tS)}</td><td style="font-weight:600">${tT>0?(tP/tT*100).toFixed(1):0}%</td>`;tb.appendChild(tr);}
   tbl.appendChild(tb);
+  // Tabela de compromisso mensal recorrente (se disponível nos dados)
+  const mensal=DADOS.mensal||[];
+  const cardMensal=document.getElementById('card-mensal');
+  if(mensal.length){
+    cardMensal.style.display='block';
+    const tm=document.getElementById('t-mensal');
+    tm.innerHTML='<thead><tr><th>Ativo / Compromisso</th><th style="text-align:right">Valor mensal</th></tr></thead>';
+    const tmb=document.createElement('tbody');
+    mensal.forEach(m=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${m.nome||m.nm}</td><td style="text-align:right;font-weight:500;font-family:'DM Mono',monospace">− ${fmtF(m.valor||m.v)}</td>`;tmb.appendChild(tr);});
+    const total=mensal.reduce((s,m)=>s+(m.valor||m.v||0),0);
+    const tr2=document.createElement('tr');tr2.className='tot-row';tr2.innerHTML=`<td>Total recorrente mensal</td><td style="text-align:right;color:var(--ac);font-family:'DM Mono',monospace">${fmtF(total)}</td>`;tmb.appendChild(tr2);
+    tm.appendChild(tmb);
+  } else {
+    cardMensal.style.display='none';
+  }
 }
 
 // ── MÚTUOS ────────────────────────────────────────────────────────
 function renderMutuos(){
   const mutuos=DADOS.mutuos||[];
   const tM=mutuos.reduce((s,m)=>s+(m.total||0),0),tP=mutuos.reduce((s,m)=>s+(m.pago||0),0),tS=mutuos.reduce((s,m)=>s+(m.saldo||0),0);
-  document.getElementById('kpi-mut').innerHTML=`<div class="kpi"><div class="kl">Total geral</div><div class="kv">${fmtF(tM)}</div></div><div class="kpi"><div class="kl">Total pago</div><div class="kv" style="color:var(--gr)">${fmtF(tP)}</div></div><div class="kpi"><div class="kl">Saldo devedor</div><div class="kv" style="color:var(--am)">${fmtF(tS)}</div></div><div class="kpi"><div class="kl">% pago</div><div class="kv">${tM>0?(tP/tM*100).toFixed(1):0}%</div></div>`;
+  document.getElementById('kpi-mut').innerHTML=`<div class="kpi"><div class="kl">Total geral (mútuos)</div><div class="kv">${fmtF(tM)}</div></div><div class="kpi"><div class="kl">Total pago</div><div class="kv" style="color:var(--gr)">${fmtF(tP)}</div></div><div class="kpi"><div class="kl">Saldo devedor</div><div class="kv" style="color:var(--am)">${fmtF(tS)}</div></div><div class="kpi"><div class="kl">% médio pago</div><div class="kv">${tM>0?(tP/tM*100).toFixed(1):0}%</div></div>`;
   const g=document.getElementById('g-mutuos');g.innerHTML='';
-  mutuos.forEach(m=>{const pct=m.total>0?Math.round((m.pago||0)/m.total*100):0;const c=document.createElement('div');c.className='mut-card';c.innerHTML=`<div class="mut-name">${m.nome}</div><div class="mut-row"><span>Saldo inicial</span><span class="mut-val" style="font-family:'DM Mono',monospace;font-size:11px">${fmtF(m.saldo_inicial||m.total)}</span></div>${m.taxa?`<div class="mut-row"><span>Taxa</span><span class="mut-val">${m.taxa}</span></div>`:''}<div class="mut-row"><span>Pago</span><span class="mut-val" style="color:var(--gr);font-family:'DM Mono',monospace;font-size:11px">${fmtF(m.pago||0)}</span></div><div class="mut-row"><span>Saldo devedor</span><span class="mut-val" style="color:var(--am);font-family:'DM Mono',monospace;font-size:11px">${fmtF(m.saldo||0)}</span></div>${m.parcelas?`<div class="mut-row"><span>Parcelas</span><span class="mut-val">${m.parcelas}x de ${fmtF(m.valor_parcela||0)}</span></div>`:''}<div style="font-size:9px;color:var(--t3);margin-top:8px;margin-bottom:3px">${pct}% pago</div><div class="pbar"><div class="pfill" style="width:${pct}%;background:var(--re)"></div></div>`;g.appendChild(c);});
+  mutuos.forEach(m=>{
+    const nm=m.nome||m.nm||'';
+    const pct=m.total>0?Math.round((m.pago||0)/m.total*100):0;
+    const c=document.createElement('div');c.className='mut-card';
+    c.innerHTML=`<div class="mut-name">${nm}</div>`
+      +`<div class="mut-row"><span>Saldo devedor inicial</span><span class="mut-val" style="font-family:'DM Mono',monospace;font-size:11px">${fmtF(m.saldo_inicial||m.total)}</span></div>`
+      +(m.taxa?`<div class="mut-row"><span>Taxa pactuada</span><span class="mut-val">${m.taxa}</span></div>`:'')
+      +`<div class="mut-row"><span>Total com juros</span><span class="mut-val" style="font-family:'DM Mono',monospace;font-size:11px">${fmtF(m.total||0)}</span></div>`
+      +`<div class="mut-row"><span>Total pago</span><span class="mut-val" style="color:var(--gr);font-family:'DM Mono',monospace;font-size:11px">${fmtF(m.pago||0)}</span></div>`
+      +`<div class="mut-row"><span>Saldo devedor atual</span><span class="mut-val" style="color:var(--am);font-family:'DM Mono',monospace;font-size:11px">${fmtF(m.saldo||0)}</span></div>`
+      +(m.parcelas?`<div class="mut-row"><span>Parcelas</span><span class="mut-val">${m.parcelas}x de ${fmtF(m.valor_parcela||m.valorParcela||0)}</span></div>`:'')
+      +((m.inicio&&m.fim)?`<div class="mut-row"><span>Período</span><span class="mut-val">${m.inicio} → ${m.fim}</span></div>`:'')
+      +`<div style="font-size:9px;color:var(--t3);margin-top:8px;margin-bottom:3px">${pct}% pago</div>`
+      +`<div class="pbar"><div class="pfill" style="width:${pct}%;background:var(--re)"></div></div>`
+      +(m.obs?`<div style="font-size:10px;color:var(--t3);margin-top:8px;font-style:italic">${m.obs}</div>`:'');
+    g.appendChild(c);
+  });
   const tbl=document.getElementById('t-mutuos');
   tbl.innerHTML='<thead><tr><th>Data</th><th>Beneficiário</th><th>Obs</th><th style="text-align:right">Valor</th></tr></thead>';
   const tb=document.createElement('tbody');
-  const pgtos=pgMes(DADOS.pagas,-1,-1).filter(p=>p.categoria==='Mútuo');
-  const todos=(DADOS.pagas||[]).filter(p=>p.categoria==='Mútuo').sort((a,b)=>a.data.localeCompare(b.data));
+  const todos=(DADOS.pagas||[]).filter(p=>(p.categoria||p.cat)==='Mútuo').sort((a,b)=>(a.data||a.dt).localeCompare(b.data||b.dt));
   if(!todos.length){const tr=document.createElement('tr');tr.innerHTML=`<td colspan="4" style="color:var(--t3);text-align:center;padding:16px">Nenhum pagamento de mútuo registrado</td>`;tb.appendChild(tr);}
-  else todos.forEach(p=>{const tr=document.createElement('tr');tr.innerHTML=`<td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--t2)">${p.data.slice(8)}/${p.data.slice(5,7)}/${p.data.slice(0,4)}</td><td>${p.nome}</td><td style="color:var(--t2);font-size:11px">${p.descricao}</td><td style="text-align:right;font-weight:500;font-family:'DM Mono',monospace">− ${fmtF(p.valor)}</td>`;tb.appendChild(tr);});
+  else{
+    todos.forEach(p=>{const dt=p.data||p.dt;const tr=document.createElement('tr');tr.innerHTML=`<td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--t2)">${dt.slice(8)}/${dt.slice(5,7)}/${dt.slice(0,4)}</td><td>${p.nome||p.nm}</td><td style="color:var(--t2);font-size:11px">${p.descricao||p.desc||'Pagamento de mútuo'}</td><td style="text-align:right;font-weight:500;font-family:'DM Mono',monospace">− ${fmtF(p.valor||p.v)}</td>`;tb.appendChild(tr);});
+    const totPago=todos.reduce((s,p)=>s+(p.valor||p.v||0),0);
+    const trTot=document.createElement('tr');trTot.className='tot-row';
+    trTot.innerHTML=`<td colspan="3">Total histórico pago</td><td style="text-align:right;color:var(--re);font-family:'DM Mono',monospace">− ${fmtF(totPago)}</td>`;
+    tb.appendChild(trTot);
+  }
   tbl.appendChild(tb);
 }
 
@@ -438,8 +475,11 @@ function renderDRE(){
 // ── BALANÇO ───────────────────────────────────────────────────────
 function renderBalanco(){
   const ativos=DADOS.ativos||[];
+  const mensal=DADOS.mensal||[];
   const tT=ativos.reduce((s,a)=>s+(a.total||0),0),tP=ativos.reduce((s,a)=>s+(a.pago||0),0),tS=ativos.reduce((s,a)=>s+(a.saldo||0),0);
-  document.getElementById('kpi-b').innerHTML=`<div class="kpi"><div class="kl">Valor total dos ativos</div><div class="kv">${fmt(tT)}</div></div><div class="kpi"><div class="kl">Total desembolsado</div><div class="kv" style="color:var(--gr)">${fmt(tP)}</div><div class="kd">${tT>0?(tP/tT*100).toFixed(1):0}% do portfólio</div></div><div class="kpi"><div class="kl">Saldo devedor total</div><div class="kv" style="color:var(--am)">${fmt(tS)}</div></div>`;
+  const totalMensal=mensal.reduce((s,m)=>s+(m.valor||m.v||0),0);
+  const kpiMensal=totalMensal>0?`<div class="kpi"><div class="kl">Compromisso mensal</div><div class="kv" style="color:var(--ac)">${fmt(totalMensal)}</div><div class="kd">parcelas recorrentes</div></div>`:'';
+  document.getElementById('kpi-b').innerHTML=`<div class="kpi"><div class="kl">Valor total dos ativos</div><div class="kv">${fmt(tT)}</div><div class="kd">custo de aquisição</div></div><div class="kpi"><div class="kl">Total desembolsado</div><div class="kv" style="color:var(--gr)">${fmt(tP)}</div><div class="kd">${tT>0?(tP/tT*100).toFixed(1):0}% do portfólio</div></div><div class="kpi"><div class="kl">Saldo devedor total</div><div class="kv" style="color:var(--am)">${fmt(tS)}</div></div>${kpiMensal}`;
   dc('c-ativo');dc('c-saldo');
   if(ativos.length){
     charts['c-ativo']=new Chart(document.getElementById('c-ativo'),{type:'doughnut',data:{labels:ativos.map(a=>a.nome.split(' (')[0]),datasets:[{data:ativos.map(a=>a.total||0),backgroundColor:CORES,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{color:'#8e8da0',font:{size:10},boxWidth:8}}}}});
