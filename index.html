@@ -150,6 +150,9 @@ async function fazerLogin() {
     if (!res.ok) throw new Error(data.error_description || 'E-mail ou senha incorretos.');
     TOKEN = data.access_token;
     localStorage.setItem('oikos_token', TOKEN);
+    fetch(`${API_URL}/portal/registrar-acesso`, {
+      method: 'POST', headers: { 'Authorization': `Bearer ${TOKEN}` }
+    }).catch(() => {});
     abrirPortal();
   } catch (e) {
     err.textContent = e.message;
