@@ -42,6 +42,8 @@ body{background:var(--bg0);color:var(--t1)}
 .tb-data{font-size:11px;color:var(--t3);font-family:'DM Mono',monospace}
 .tb-sair{margin-left:auto;background:none;border:1px solid var(--border);border-radius:var(--rs);padding:5px 12px;color:var(--t2);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif}
 .tb-sair:hover{color:var(--t1)}
+.tb-sync{background:none;border:1px solid rgba(78,205,196,.35);border-radius:var(--rs);padding:5px 12px;color:var(--ac2);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s;display:none}
+.tb-sync:hover{opacity:.75}.tb-sync:disabled{opacity:.4;cursor:not-allowed}
 
 /* IFRAME */
 .portal-frame{flex:1;border:none;width:100%;display:block;background:var(--bg0)}
@@ -81,6 +83,7 @@ body{background:var(--bg0);color:var(--t1)}
     <div class="tb-sep"></div>
     <span class="tb-nome" id="tb-nome"></span>
     <span class="tb-data" id="tb-data"></span>
+    <button class="tb-sync" id="tb-sync" onclick="sincronizarNibo()">↻ Atualizar dados</button>
     <button class="tb-sair" onclick="logout()">Sair</button>
   </div>
 
@@ -196,6 +199,11 @@ async function carregarPortal() {
     document.getElementById('tb-nome').textContent = nomeCliente;
     document.getElementById('tb-data').textContent = dataStr ? `Dados de: ${dataStr}` : '';
 
+    const btnSync = document.getElementById('tb-sync');
+    if ((dados.cliente?.sistema_erp || '').toLowerCase() === 'nibo') {
+      btnSync.style.display = 'block';
+    }
+
     // Renderiza via blob URL — permite scripts e CDN externos no iframe
     const blob = new Blob([html], { type: 'text/html' });
     const blobUrl = URL.createObjectURL(blob);
@@ -213,6 +221,32 @@ async function carregarPortal() {
     wrap.innerHTML = `
       <div class="load-err">${e.message}</div>
       <button onclick="logout()" style="margin-top:12px;padding:8px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:none;color:#8e8da0;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">Voltar ao login</button>`;
+  }
+}
+
+// ── SYNC NIBO ─────────────────────────────────────────────────────
+async function sincronizarNibo() {
+  const btn = document.getElementById('tb-sync');
+  btn.disabled = true;
+  btn.textContent = '↻ Atualizando...';
+  try {
+    const res = await fetch(`${API_URL}/portal/sync-nibo`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${TOKEN}` },
+    });
+    if (res.status === 401) { logout(); return; }
+    if (!res.ok) {
+      const d = await res.json();
+      alert(d.detail || 'Erro ao sincronizar. Tente novamente.');
+      return;
+    }
+    // Recarrega o painel com os dados atualizados
+    carregarPortal();
+  } catch {
+    alert('Erro de conexão. Tente novamente.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '↻ Atualizar dados';
   }
 }
 
