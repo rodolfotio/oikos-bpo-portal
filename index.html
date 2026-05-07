@@ -241,6 +241,9 @@ async function sincronizarNibo() {
   const btn = document.getElementById('tb-sync');
   btn.disabled = true;
   btn.textContent = '↻ Atualizando...';
+
+  let unavailable = false;
+
   try {
     const res = await fetch(`${API_URL}/portal/sync-nibo`, {
       method: 'POST',
@@ -248,17 +251,33 @@ async function sincronizarNibo() {
     });
     if (res.status === 401) { logout(); return; }
     if (!res.ok) {
-      const d = await res.json();
-      alert(d.detail || 'Erro ao sincronizar. Tente novamente.');
+      const d = await res.json().catch(() => ({}));
+      // 501 = token não configurado, 502 = token inválido/expirado ou dados vazios
+      if (res.status === 501 || res.status === 502) {
+        unavailable = true;
+      } else {
+        alert(d.detail || 'Erro ao sincronizar. Tente novamente.');
+      }
       return;
     }
-    // Recarrega o painel com os dados atualizados
+    // Só recarrega se a sincronização foi bem-sucedida
     carregarPortal();
   } catch {
     alert('Erro de conexão. Tente novamente.');
   } finally {
     btn.disabled = false;
-    btn.textContent = '↻ Atualizar dados';
+    if (unavailable) {
+      btn.textContent = '↻ Sincronização indisponível';
+      btn.style.borderColor = 'rgba(248,113,113,.35)';
+      btn.style.color = 'var(--re)';
+      setTimeout(() => {
+        btn.textContent = '↻ Atualizar dados';
+        btn.style.borderColor = '';
+        btn.style.color = '';
+      }, 5000);
+    } else {
+      btn.textContent = '↻ Atualizar dados';
+    }
   }
 }
 
