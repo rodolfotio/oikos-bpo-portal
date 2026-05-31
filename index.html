@@ -216,8 +216,11 @@ async function carregarPortal() {
       btnSync.style.display = 'block';
     }
 
+    // Injeta o token no HTML antes de criar o blob, garantindo acesso autenticado no iframe
+    const htmlFinal = html.replace(/(<body[^>]*>)/, `$1<script>window._portalToken=${JSON.stringify(TOKEN)};<\/script>`);
+
     // Renderiza via blob URL — permite scripts e CDN externos no iframe
-    const blob = new Blob([html], { type: 'text/html' });
+    const blob = new Blob([htmlFinal], { type: 'text/html' });
     const blobUrl = URL.createObjectURL(blob);
 
     const frame = document.getElementById('portal-frame');
