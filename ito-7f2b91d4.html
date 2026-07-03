@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITO Instituto — Análise Financeira</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#09090e;--bg1:#111118;--bg2:#18181f;--bg3:#22222c;--bg4:#2c2c38;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --t1:#eeedf5;--t2:#8e8da0;--t3:#4e4d60;
+  --ac:#7c6ff7;--ac2:#4ecdc4;--gr:#4ade80;--re:#f87171;--am:#fbbf24;
+  --r:12px;--rs:8px;
+  font-family:'DM Sans',sans-serif;
+}
+html,body{height:100%;background:var(--bg0);color:var(--t1);overflow-x:hidden}
+.shell{display:grid;grid-template-rows:auto 1fr;min-height:100vh}
+.topbar{background:var(--bg1);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;padding:14px 24px;flex-wrap:wrap}
+.logo{font-size:13px;font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.logo span{color:var(--ac)}
+.sep{width:1px;height:18px;background:var(--border2);flex-shrink:0}
+.cli{font-size:11px;color:var(--t2);white-space:nowrap}
+.cli b{color:var(--t1);font-weight:500}
+.upd{margin-left:auto;font-size:10px;color:var(--t3);font-family:'DM Mono',monospace;white-space:nowrap}
+.subnav{display:flex;gap:2px;padding:10px 24px;background:var(--bg1);border-bottom:1px solid var(--border);
+  overflow-x:auto;scrollbar-width:none;flex-wrap:wrap}
+.subnav::-webkit-scrollbar{display:none}
+.nb{padding:7px 14px;border-radius:var(--rs);border:none;background:none;color:var(--t2);
+  font-size:11.5px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--t1)}
+.nb.on{background:var(--ac);color:#fff;font-weight:500}
+.content{padding:22px 24px 60px;max-width:1180px;margin:0 auto;width:100%}
+.page{display:none}
+.page.on{display:block}
+.sec-title{font-size:16px;font-weight:600;margin-bottom:2px}
+.sec-sub{font-size:11.5px;color:var(--t2);margin-bottom:18px;line-height:1.5}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.kl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.kv{font-size:19px;font-weight:500;font-variant-numeric:tabular-nums}
+.kd{font-size:10px;margin-top:4px;color:var(--t2)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+@media(max-width:900px){.g2{grid-template-columns:1fr}}
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.card:last-child{margin-bottom:0}
+.ct{font-size:10px;font-weight:600;color:var(--t3);margin-bottom:14px;
+  text-transform:uppercase;letter-spacing:.07em}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{color:var(--t3);font-weight:500;text-align:left;padding:6px 8px;
+  border-bottom:1px solid var(--border);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+tbody td{padding:8px 8px;border-bottom:1px solid var(--border);color:var(--t1);vertical-align:middle;font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg2)}
+.tot-row td{border-top:1px solid var(--border2)!important;border-bottom:none!important;font-weight:600}
+.num{text-align:right;font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap}
+.bdg{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap}
+.bg{background:rgba(74,222,128,.12);color:var(--gr)}
+.ba{background:rgba(251,191,36,.12);color:var(--am)}
+.br{background:rgba(248,113,113,.12);color:var(--re)}
+.bb{background:rgba(124,111,247,.15);color:#b0a9f9}
+.pbar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px}
+.pfill{height:100%;border-radius:3px;transition:width .5s}
+.cw{position:relative;width:100%}
+.note{font-size:10.5px;color:var(--t3);margin-top:10px;font-style:italic;line-height:1.6}
+.leg-wrap{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2)}
+.leg-sq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+/* DRE table specifics */
+.dre-total td{font-weight:600}
+.dre-total.lvl0 td:first-child{color:var(--t1)}
+.dre-group td{font-weight:500;color:var(--t2);background:var(--bg2)}
+.dre-detail td:first-child{padding-left:24px;color:var(--t2);font-weight:400}
+.dre-final td{font-weight:700;border-top:1px solid var(--border2);color:var(--ac2)}
+/* KPI indicator card */
+.kpi-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap}
+.kpi-row:last-child{border-bottom:none}
+.kpi-name{font-size:12.5px;color:var(--t1);flex:1;min-width:180px}
+.kpi-meta{font-size:10px;color:var(--t3)}
+.kpi-vals{display:flex;align-items:center;gap:10px}
+.kpi-val{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;min-width:56px;text-align:right}
+/* empty state */
+.empty{text-align:center;padding:60px 20px;color:var(--t3)}
+.empty h2{font-size:15px;color:var(--t2);margin-bottom:8px;font-weight:500}
+.empty p{font-size:12px}
+.footer-note{text-align:center;font-size:10px;color:var(--t3);padding:24px 0 0;
+  font-family:'DM Mono',monospace}
+@media(max-width:767px){
+  .content{padding:16px}
+  .kgrid{grid-template-columns:1fr 1fr}
+  .g2{grid-template-columns:1fr}
+  .g3{grid-template-columns:1fr}
+  .cw{height:200px!important}
+  table{font-size:11px}
+  .cli{display:none}
+}
+.content::-webkit-scrollbar{width:6px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <span class="logo">Oikos <span>BPO</span></span>
+    <div class="sep"></div>
+    <span class="cli">Análise <b>ITO Instituto</b> — Biolife + T.O. (entidade única) · TO Family Holding</span>
+    <span class="upd">Consolidação Jan–Jun/2026 · gerado 03/07/2026</span>
+  </div>
+  <div class="subnav" id="subnav">
+    <button class="nb on" onclick="spI('resumo',this)">Resumo</button>
+    <button class="nb" onclick="spI('dremensal',this)">DRE Mensal</button>
+    <button class="nb" onclick="spI('drejunho',this)">DRE Junho</button>
+    <button class="nb" onclick="spI('kpis',this)">KPIs</button>
+    <button class="nb" onclick="spI('medicos',this)">Médicos</button>
+    <button class="nb" onclick="spI('linhas',this)">Linhas</button>
+    <button class="nb" onclick="spI('salas',this)">Salas</button>
+  </div>
+
+  <div class="content">
+
+    <!-- RESUMO -->
+    <div class="page on" id="page-resumo">
+      <div class="sec-title">Painel executivo — Receita x Custos</div>
+      <div class="sec-sub">Valores em R$ · Média e Total consideram Jan–Mai (Junho ainda não tem despesas estruturais lançadas)</div>
+      <div class="kgrid" id="kpi-resumo"></div>
+      <div class="g2">
+        <div class="card"><div class="ct">Composição — média Jan–Mai</div><div class="cw" style="height:230px"><canvas id="c-composicao"></canvas></div></div>
+        <div class="card"><div class="ct">Receita x Custo Fixo x Custo Variável — mês a mês</div><div class="cw" style="height:230px"><canvas id="c-evolucao"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="ct">Receita bruta e resultado por mês</div>
+        <div class="tw"><table id="t-painel"></table></div>
+        <div class="note">Receita de Junho é parcial (faturamento até o fechamento da planilha de gestão). Custo Fixo e Variável de Junho ainda não foram lançados.</div>
+      </div>
+    </div>
+
+    <!-- DRE MENSAL -->
+    <div class="page" id="page-dremensal">
+      <div class="sec-title">DRE Gerencial Mensal — Jan a Mai/2026</div>
+      <div class="sec-sub">R$ · linhas indentadas = detalhe da categoria acima · AV% = participação sobre a receita bruta</div>
+      <div class="card"><div class="tw"><table id="t-dremensal"></table></div></div>
+      <div class="card" style="background:var(--bg2)">
+        <div class="ct">Memorando — fora do resultado da clínica</div>
+        <div class="tw"><table id="t-memo"></table></div>
+        <div class="note">Aportes à Holding, empréstimos, imóveis, obra/CAPEX e chargebacks de cartão. Excluídos do custo e do resultado da operação — mostrados aqui só para transparência.</div>
+      </div>
+    </div>
+
+    <!-- DRE JUNHO -->
+    <div class="page" id="page-drejunho">
+      <div class="sec-title">DRE Econômica — Junho/2026</div>
+      <div class="sec-sub">Repasse médico pleno, apurado nas abas de médico (visão "real") · R$</div>
+      <div class="card">
+        <div class="tw"><table id="t-drejunho"></table></div>
+        <div class="note">O repasse médico real (~36%) é o dobro do que os rótulos do banco capturavam nos meses anteriores (~15%) — é a principal alavanca de margem da clínica.</div>
+      </div>
+    </div>
+
+    <!-- KPIS -->
+    <div class="page" id="page-kpis">
+      <div class="sec-title">Indicadores-chave vs. meta</div>
+      <div class="sec-sub">Base econômica: Junho/2026 (repasse pleno) · faróis comparam cada indicador com as faixas de meta definidas para o ITO</div>
+      <div class="kgrid" id="kpi-be"></div>
+      <div class="card">
+        <div class="ct">Saúde financeira</div>
+        <div id="kpi-lista"></div>
+      </div>
+      <div class="note" style="margin:14px 2px 0">Custo fixo usa a média Jan–Mai (R$ 153.389). Retirada de sócios usa a média Jan–Mai (R$ 84.523).</div>
+    </div>
+
+    <!-- MÉDICOS -->
+    <div class="page" id="page-medicos">
+      <div class="sec-title">Desempenho por médico — Junho/2026</div>
+      <div class="sec-sub">Faturamento, repasse e contribuição que cada profissional deixa para a clínica · R$</div>
+      <div class="card"><div class="ct">Faturamento por médico</div><div class="cw" style="height:280px"><canvas id="c-medicos"></canvas></div></div>
+      <div class="card">
+        <div class="ct">Ranking completo</div>
+        <div class="tw"><table id="t-medicos"></table></div>
+        <div class="note">Risco de concentração: Dr. Thiago e Dra. Manuela respondem por ~87% do faturamento — diversificar o corpo clínico reduz dependência.<br>% Repasse varia muito (33% a 59%): vale revisar contratos dos médicos com repasse acima de 45% e baixo volume.</div>
+      </div>
+    </div>
+
+    <!-- LINHAS -->
+    <div class="page" id="page-linhas">
+      <div class="sec-title">Mix e margem por linha de negócio — Junho/2026</div>
+      <div class="sec-sub">Margem bruta = receita − material (antes de repasse) · R$</div>
+      <div class="g2">
+        <div class="card"><div class="ct">Mix de receita</div><div class="cw" style="height:230px"><canvas id="c-linhas-mix"></canvas></div></div>
+        <div class="card"><div class="ct">Margem bruta por linha</div><div class="cw" style="height:230px"><canvas id="c-linhas-margem"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="tw"><table id="t-linhas"></table></div>
+        <div class="note">Atenção à Tirzepatida em frasco: margem bruta de só ~43% (vs 80% na dose fracionada). Avaliar preço ou fracionamento.<br>Ticket médio por consulta: R$ 4.639 · por paciente único no mês: R$ 2.486 · 377 pacientes · 202 consultas.</div>
+      </div>
+    </div>
+
+    <!-- SALAS -->
+    <div class="page" id="page-salas">
+      <div class="sec-title">Custo fixo por sala</div>
+      <div class="sec-sub">9 consultórios (7 clínicos + 2 nutrição) · duas visões de rateio · R$/mês</div>
+      <div class="kgrid" id="kpi-salas"></div>
+      <div class="card"><div class="ct">Custo por sala — comparação das visões</div><div class="cw" style="height:230px"><canvas id="c-salas"></canvas></div></div>
+      <div class="card">
+        <div class="ct">Detalhe mês a mês</div>
+        <div class="tw"><table id="t-salas"></table></div>
+        <div class="note">Na visão ponderada, cada sala clínica absorve mais estrutura e cada sala de nutrição absorve metade (peso 0,5 — ajustável na planilha-fonte).</div>
+      </div>
+    </div>
+
+    <div class="footer-note">Oikos BPO — Análise ITO Instituto · dados extraídos das conciliações bancárias Jan–Mai e planilha de gestão de Junho/2026</div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// DADOS — atualize aqui todo mês (transcrito da planilha "ITO - DRE e Indicadores")
+// ════════════════════════════════════════════════════════════════════
+const CORES=['#7c6ff7','#4ecdc4','#fbbf24','#f87171','#34d399','#60a5fa','#a78bfa','#fb923c'];
+const MESES6=['Jan','Fev','Mar','Abr','Mai','Jun'];
+
+const PAINEL=[
+  {cat:'Receita bruta (faturamento)', v:[1150906,814466,1191644,1178979,1589024,938907], media:1185004, total:5925020, cor:'var(--t1)'},
+  {cat:'Custo Fixo (estrutura)', v:[159233,111881,176196,136106,183528,null], media:153389, total:766943, cor:'var(--am)'},
+  {cat:'Custo Variável', v:[532296,461293,499172,619561,496822,null], media:521829, total:2609144, cor:'var(--re)'},
+  {cat:'Remuneração de Sócios', v:[61787,53451,11165,8581,287631,null], media:84523, total:422615, cor:'#b0a9f9'},
+  {cat:'Resultado Operacional (antes sócios)', v:[459378,241293,516276,423312,908673,null], media:509787, total:2548933, cor:'var(--gr)'},
+];
+const PAINEL_IND=[
+  {nome:'Custo Fixo / Receita', v:['13.8%','13.7%','14.8%','11.5%','11.5%','—'], media:'12.9%'},
+  {nome:'Custo Variável / Receita', v:['46.3%','56.6%','41.9%','52.6%','31.3%','—'], media:'44.0%'},
+  {nome:'Custo Fixo por Sala (÷9 salas)', v:['17,693','12,431','19,577','15,123','20,392','—'], media:'17,043'},
+];
+
+// nivel: 0=total/grupo, 1=detalhe. tipo: 'total' (linha-mestra), 'grupo' (cabeçalho de grupo), 'detalhe'
+const DRE_MESES=['Jan','Fev','Mar','Abr','Mai'];
+const DRE=[
+  {lbl:'RECEITA BRUTA', tipo:'total', v:[1150906,814466,1191644,1178979,1589024], media:1185004, acum:5925020, av:'100.0%'},
+  {lbl:'(–) Deduções e tributos sobre venda', tipo:'grupo', v:[290539,118754,95077,235373,83074], media:164563, acum:822817, av:'13.9%'},
+  {lbl:'Impostos sobre Vendas/Serviço', tipo:'detalhe', v:[285438,116732,92359,234011,82143], media:162136, acum:810682, av:'13.7%'},
+  {lbl:'Devoluções (contra-receita)', tipo:'detalhe', v:[4758,1680,2790,1000,729], media:2191, acum:10957, av:'0.2%'},
+  {lbl:'Tarifas Bancárias/MDR', tipo:'detalhe', v:[343,342,339,362,202], media:318, acum:1588, av:'0.0%'},
+  {lbl:'Tarifas/Anuidade Cartão', tipo:'detalhe', v:[0,0,-410,0,0], media:-82, acum:-410, av:'(0.0%)'},
+  {lbl:'RECEITA LÍQUIDA', tipo:'total', v:[860367,695712,1096567,943607,1505950], media:1020441, acum:5102203, av:'86.1%'},
+  {lbl:'(–) Custos e despesas variáveis', tipo:'grupo', v:[241757,342539,404095,384188,413748], media:357265, acum:1786327, av:'30.1%'},
+  {lbl:'Repasse Médico/Nutri', tipo:'detalhe', v:[67918,205377,184855,202654,224860], media:177133, acum:885663, av:'14.9%'},
+  {lbl:'Material Médico (cartão)', tipo:'detalhe', v:[115380,86820,107442,140272,103302], media:110643, acum:553216, av:'9.3%'},
+  {lbl:'Material Médico/Enfermagem', tipo:'detalhe', v:[58281,15750,83525,13901,25984], media:39488, acum:197440, av:'3.3%'},
+  {lbl:'Cursos/Capacitação', tipo:'detalhe', v:[0,0,20000,18770,37520], media:15258, acum:76290, av:'1.3%'},
+  {lbl:'Cursos/Capacitação (cartão)', tipo:'detalhe', v:[0,10297,6540,6737,16540], media:8023, acum:40113, av:'0.7%'},
+  {lbl:'Equipamentos/Utensílios (diversos)', tipo:'detalhe', v:[0,22047,0,0,0], media:4409, acum:22047, av:'0.4%'},
+  {lbl:'Despesa Operacional', tipo:'detalhe', v:[178,391,0,0,4653], media:1044, acum:5222, av:'0.1%'},
+  {lbl:'Compras Diversas (cartão)', tipo:'detalhe', v:[0,1857,1470,902,734], media:993, acum:4963, av:'0.1%'},
+  {lbl:'Eventos/Brindes/Gráfico', tipo:'detalhe', v:[0,0,264,954,156], media:275, acum:1373, av:'0.0%'},
+  {lbl:'MARGEM DE CONTRIBUIÇÃO', tipo:'total', v:[618610,353173,692472,559419,1092202], media:663175, acum:3315876, av:'56.0%'},
+  {lbl:'(–) Custos e despesas fixas', tipo:'grupo', v:[159233,111881,176196,136106,183528], media:153389, acum:766943, av:'12.9%'},
+  {lbl:'Salários', tipo:'detalhe', v:[72370,56348,69121,54506,80951], media:66659, acum:333296, av:'5.6%'},
+  {lbl:'Plano de Saúde', tipo:'detalhe', v:[10589,0,18299,12950,12669], media:10901, acum:54507, av:'0.9%'},
+  {lbl:'Benefícios/Vale-Transporte', tipo:'detalhe', v:[8409,11394,10779,10735,10957], media:10455, acum:52276, av:'0.9%'},
+  {lbl:'Rescisões/Pessoal', tipo:'detalhe', v:[25930,6696,5818,9216,3562], media:10244, acum:51222, av:'0.9%'},
+  {lbl:'Energia/Água', tipo:'detalhe', v:[21632,4172,7404,8454,8019], media:9936, acum:49681, av:'0.8%'},
+  {lbl:'Consultoria', tipo:'detalhe', v:[6500,1400,28950,5000,0], media:8370, acum:41850, av:'0.7%'},
+  {lbl:'Encargos sobre Folha', tipo:'detalhe', v:[0,0,0,0,38196], media:7639, acum:38196, av:'0.6%'},
+  {lbl:'Marketing/Publicidade', tipo:'detalhe', v:[0,12000,12000,12000,0], media:7200, acum:36000, av:'0.6%'},
+  {lbl:'Manutenção Predial/Equip.', tipo:'detalhe', v:[1604,1500,5195,1604,3500], media:2681, acum:13404, av:'0.2%'},
+  {lbl:'Copa/Alimentação/Eventos', tipo:'detalhe', v:[98,4437,4044,2106,2319], media:2601, acum:13003, av:'0.2%'},
+  {lbl:'Assessoria Jurídica', tipo:'detalhe', v:[0,3000,3000,3000,3200], media:2440, acum:12200, av:'0.2%'},
+  {lbl:'RH/Recrutamento', tipo:'detalhe', v:[6300,0,0,2400,2037], media:2147, acum:10737, av:'0.2%'},
+  {lbl:'Medicina/Seg. Trabalho', tipo:'detalhe', v:[2069,1765,2451,2369,1997], media:2130, acum:10650, av:'0.2%'},
+  {lbl:'Assessoria Contábil', tipo:'detalhe', v:[0,3500,0,3500,3500], media:2100, acum:10500, av:'0.2%'},
+  {lbl:'Marketing/Publicidade (cartão)', tipo:'detalhe', v:[0,0,0,1748,5644], media:1478, acum:7392, av:'0.1%'},
+  {lbl:'Software/Sistemas', tipo:'detalhe', v:[180,186,2712,2662,847], media:1317, acum:6586, av:'0.1%'},
+  {lbl:'Esterilização/Lixo Contaminado', tipo:'detalhe', v:[1638,1680,1933,1267,0], media:1304, acum:6518, av:'0.1%'},
+  {lbl:'Telefone/Internet', tipo:'detalhe', v:[1253,1359,1061,1268,1465], media:1281, acum:6406, av:'0.1%'},
+  {lbl:'Fardamento', tipo:'detalhe', v:[0,0,1740,0,995], media:547, acum:2735, av:'0.0%'},
+  {lbl:'Serviços Terceirizados', tipo:'detalhe', v:[0,0,0,0,2700], media:540, acum:2700, av:'0.0%'},
+  {lbl:'Software/Sistemas (cartão)', tipo:'detalhe', v:[661,566,375,375,429], media:481, acum:2406, av:'0.0%'},
+  {lbl:'Segurança', tipo:'detalhe', v:[0,542,542,542,542], media:434, acum:2168, av:'0.0%'},
+  {lbl:'Aluguel/Seguro Predial', tipo:'detalhe', v:[0,1335,0,0,0], media:267, acum:1335, av:'0.0%'},
+  {lbl:'Aromatização/Ambiente (cartão)', tipo:'detalhe', v:[0,0,393,405,0], media:160, acum:798, av:'0.0%'},
+  {lbl:'Copa/Alimentação (cartão)', tipo:'detalhe', v:[0,0,377,0,0], media:75, acum:377, av:'0.0%'},
+  {lbl:'RESULTADO OPERACIONAL', tipo:'total', v:[459378,241293,516276,423312,908673], media:509787, acum:2548933, av:'43.0%'},
+  {lbl:'(–) Remuneração de sócios', tipo:'grupo', v:[61787,53451,11165,8581,287631], media:84523, acum:422615, av:'7.1%'},
+  {lbl:'Antecipação de Lucros (sócios)', tipo:'detalhe', v:[60436,49950,0,0,271980], media:76473, acum:382365, av:'6.5%'},
+  {lbl:'Viagens (retirada de sócio)', tipo:'detalhe', v:[0,0,4648,4461,4209], media:2664, acum:13318, av:'0.2%'},
+  {lbl:'Pró-Labore (sócios)', tipo:'detalhe', v:[1351,2702,2885,2885,1443], media:2253, acum:11267, av:'0.2%'},
+  {lbl:'Despesa de Sócio (diversos)', tipo:'detalhe', v:[0,0,0,0,10000], media:2000, acum:10000, av:'0.2%'},
+  {lbl:'Vestuário/Pessoal (retirada de sócio)', tipo:'detalhe', v:[0,799,3631,1235,0], media:1133, acum:5665, av:'0.1%'},
+  {lbl:'RESULTADO APÓS SÓCIOS', tipo:'final', v:[397591,187842,505111,414731,621042], media:425264, acum:2126318, av:'35.9%'},
+];
+const MEMO=[
+  {lbl:'Não-operacional (Holding, empréstimos, CAPEX)', tipo:'grupo', v:[41357,108178,810482,302653,365259], media:325586, acum:1627929, av:'27.5%'},
+  {lbl:'Holding / Não-operacional', tipo:'detalhe', v:[0,91357,750000,250000,0], media:218271, acum:1091357, av:'18.4%'},
+  {lbl:'Chargebacks/Garantias (não-custo)', tipo:'detalhe', v:[0,0,1203,11297,298902], media:62280, acum:311401, av:'5.3%'},
+  {lbl:'Empréstimos / Não-operacional', tipo:'detalhe', v:[41357,0,41357,41357,41357], media:33085, acum:165427, av:'2.8%'},
+  {lbl:'Imóveis / Não-operacional', tipo:'detalhe', v:[0,13504,17922,0,0], media:6285, acum:31426, av:'0.5%'},
+  {lbl:'Obra / CAPEX', tipo:'detalhe', v:[0,0,0,0,25000], media:5000, acum:25000, av:'0.4%'},
+  {lbl:'Equipamentos/Informática CAPEX (cartão)', tipo:'detalhe', v:[0,3318,0,0,0], media:664, acum:3318, av:'0.1%'},
+  {lbl:'A revisar', tipo:'detalhe', v:[0,225,0,0,0], media:45, acum:225, av:'0.0%'},
+];
+
+const DRE_JUNHO=[
+  {lbl:'RECEITA BRUTA', val:937141, av:'100.0%', obs:'Valor pago pelos pacientes', bold:true},
+  {lbl:'(–) Repasse médico/nutri', val:-335557, av:'(35.8%)', obs:'36% do faturamento (apuração real)'},
+  {lbl:'(–) Impostos', val:-99729, av:'(10.6%)', obs:'Tributos sobre serviço'},
+  {lbl:'(–) Taxas de cartão', val:-27975, av:'(3.0%)', obs:'MDR das maquininhas e links'},
+  {lbl:'(–) Material e insumos', val:-177745, av:'(19.0%)', obs:'Medicamentos, injetáveis, implantes'},
+  {lbl:'(–) Bonificações', val:-11910, av:'(1.3%)', obs:'Implantes e 1% de bonificação'},
+  {lbl:'(=) CONTRIBUIÇÃO DA CLÍNICA', val:284225, av:'30.3%', obs:'O que a clínica retém antes da estrutura', bold:true, cor:'var(--ac2)'},
+  {lbl:'(–) Custo fixo (média Jan–Mai)', val:-153389, av:'(16.4%)', obs:'Estrutura: salários, aluguel, energia, etc.'},
+  {lbl:'(=) RESULTADO OPERACIONAL', val:130836, av:'14.0%', obs:'Lucro da operação antes dos sócios', bold:true, cor:'var(--gr)'},
+];
+
+const KPIS=[
+  {nome:'Contribuição da Clínica / Faturamento', valor:'30.3%', meta:'≥ 32.0%', atencao:'25.0%', farol:'ba'},
+  {nome:'Repasse Médico / Faturamento', valor:'35.8%', meta:'≤ 33.0%', atencao:'40.0%', farol:'ba'},
+  {nome:'Custo Fixo / Faturamento', valor:'16.4%', meta:'≤ 18.0%', atencao:'25.0%', farol:'bg'},
+  {nome:'Margem Operacional', valor:'14.0%', meta:'≥ 12.0%', atencao:'6.0%', farol:'bg'},
+  {nome:'Margem de Segurança (Fat / Break-even)', valor:'1.9x', meta:'≥ 1.5x', atencao:'1.2x', farol:'bg'},
+  {nome:'Carga Tributária Efetiva', valor:'10.6%', meta:'≤ 15.0%', atencao:'18.0%', farol:'bg'},
+  {nome:'Concentração Top-2 Médicos', valor:'87.1%', meta:'≤ 70.0%', atencao:'80.0%', farol:'br'},
+  {nome:'Payout (Retirada Sócios / Resultado)', valor:'64.6%', meta:'≤ 80.0%', atencao:'100.0%', farol:'bg'},
+];
+const PONTO_EQUILIBRIO=505749;
+
+const MEDICOS=[
+  {nome:'Dr. Thiago Omena', fat:430324, repasse:151492, pctRepasse:'35.2%', contrib:136412, pctContrib:'31.7%'},
+  {nome:'Dra. Manuela Rocha', fat:385475, repasse:128700, pctRepasse:'33.4%', contrib:115279, pctContrib:'29.9%'},
+  {nome:'Dra. Paula Zanforlin', fat:39490, repasse:22523, pctRepasse:'57.0%', contrib:10182, pctContrib:'25.8%'},
+  {nome:'Dr. Caio Galvão', fat:23465, repasse:7881, pctRepasse:'33.6%', contrib:7711, pctContrib:'32.9%'},
+  {nome:'Dra. Camila dos Anjos', fat:22462, repasse:9146, pctRepasse:'40.7%', contrib:6347, pctContrib:'28.3%'},
+  {nome:'Dr. Clênio Jaques', fat:11410, repasse:5032, pctRepasse:'44.1%', contrib:3777, pctContrib:'33.1%'},
+  {nome:'Dra. Tassiana Ribeiro', fat:9230, repasse:3443, pctRepasse:'37.3%', contrib:3015, pctContrib:'32.7%'},
+  {nome:'Dra. Rosângela Coelho', fat:9040, repasse:4356, pctRepasse:'48.2%', contrib:2643, pctContrib:'29.2%'},
+  {nome:'Dra. Mariana Wanderley', fat:2520, repasse:1122, pctRepasse:'44.5%', contrib:919, pctContrib:'36.5%'},
+  {nome:'Dr. Darlan Benevides', fat:1725, repasse:1016, pctRepasse:'58.9%', contrib:436, pctContrib:'25.3%'},
+  {nome:'Dra. Larissa Toledo', fat:1650, repasse:695, pctRepasse:'42.1%', contrib:492, pctContrib:'29.8%'},
+  {nome:'Nutricionista Bárbara', fat:350, repasse:150, pctRepasse:'42.9%', contrib:247, pctContrib:'70.6%'},
+];
+const MEDICOS_TOTAL={fat:937141, repasse:335557, pctRepasse:'35.8%', contrib:287459, pctContrib:'30.7%'};
+
+const LINHAS=[
+  {linha:'Tirzepatida (emagrecimento)', qtd:319, receita:223118, pctMix:'22.0%', custoMat:73619, margem:149499, pctMargem:'67.0%'},
+  {linha:'Consultas/Planos', qtd:222, receita:218960, pctMix:'21.6%', custoMat:0, margem:218960, pctMargem:'100.0%'},
+  {linha:'Injetáveis/Vitaminas', qtd:428, receita:198903, pctMix:'19.6%', custoMat:19856, margem:179047, pctMargem:'90.0%'},
+  {linha:'Soroterapia', qtd:200, receita:192981, pctMix:'19.0%', custoMat:22934, margem:170047, pctMargem:'88.1%'},
+  {linha:'Implantes hormonais', qtd:137, receita:155706, pctMix:'15.4%', custoMat:55608, margem:100098, pctMargem:'64.3%'},
+  {linha:'Diversos/Logística', qtd:33, receita:13374, pctMix:'1.3%', custoMat:5144, margem:8229, pctMargem:'61.5%'},
+  {linha:'Outros procedimentos', qtd:19, receita:10360, pctMix:'1.0%', custoMat:584, margem:9776, pctMargem:'94.4%'},
+];
+const LINHAS_TOTAL={qtd:1358, receita:1013401, custoMat:177745, margem:835656, pctMargem:'82.5%'};
+
+const SALAS_PREM={totalSalas:9, salasClinicas:7, salasNutricao:2, pesoNutricao:0.5};
+const SALAS_MESES=['Jan','Fev','Mar','Abr','Mai'];
+const SALAS_CUSTO_FIXO=[159233,111881,176196,136106,183528];
+const SALAS_IGUAL=[17693,12431,19577,15123,20392];
+const SALAS_POND_CLINICA=[19904,13985,22024,17013,22941];
+const SALAS_POND_NUTRI=[9952,6993,11012,8507,11471];
+
+// ════════════════════════════════════════════════════════════════════
+// ENGINE
+// ════════════════════════════════════════════════════════════════════
+const charts={};
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id]}}
+function fmt(v){if(v===null||v===undefined)return'—';if(v===0)return'—';const a=Math.abs(v);if(a>=1000000)return'R$ '+(v/1000000).toFixed(3).replace(/\.?0+$/,'').replace('.',',')+'M';if(a>=1000)return'R$ '+(v/1000).toFixed(0)+'k';return'R$ '+Math.round(v).toLocaleString('pt-BR')}
+function fmtF(v){if(v===null||v===undefined)return'—';if(v===0)return'—';const neg=v<0;const s='R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});return neg?'('+s+')':s}
+function fmtI(v){return v.toLocaleString('pt-BR')}
+
+// Cada aba só é renderizada na primeira vez que é aberta — evita criar gráficos Chart.js
+// dentro de um container ainda com display:none (o canvas nasce com tamanho 0 e fica espremido).
+const renderedPages=new Set(['resumo']);
+const RENDER_FN={dremensal:renderDreMensal,drejunho:renderDreJunho,kpis:renderKpis,medicos:renderMedicos,linhas:renderLinhas,salas:renderSalas};
+function spI(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('#subnav .nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('page-'+id).classList.add('on');
+  btn.classList.add('on');
+  window.scrollTo(0,0);
+  if(!renderedPages.has(id)){
+    renderedPages.add(id);
+    RENDER_FN[id] && RENDER_FN[id]();
+  }
+}
+
+function farolChip(cls){return `<span class="bdg ${cls}">${cls==='bg'?'🟢 no alvo':cls==='ba'?'🟡 atenção':'🔴 fora da meta'}</span>`}
+
+// ── RESUMO ──────────────────────────────────────────────────────
+function renderResumo(){
+  const total=PAINEL[0].total, custoFixo=PAINEL[1].total, custoVar=PAINEL[2].total, socios=PAINEL[3].total, resultado=PAINEL[4].total;
+  document.getElementById('kpi-resumo').innerHTML=`
+    <div class="kpi"><div class="kl">Receita bruta (acum.)</div><div class="kv">${fmt(total)}</div><div class="kd">Jan–Jun</div></div>
+    <div class="kpi"><div class="kl">Custo Fixo (méd.)</div><div class="kv" style="color:var(--am)">${fmt(PAINEL[1].media)}</div><div class="kd">${(PAINEL[1].media/PAINEL[0].media*100).toFixed(1)}% da receita</div></div>
+    <div class="kpi"><div class="kl">Custo Variável (méd.)</div><div class="kv" style="color:var(--re)">${fmt(PAINEL[2].media)}</div><div class="kd">${(PAINEL[2].media/PAINEL[0].media*100).toFixed(1)}% da receita</div></div>
+    <div class="kpi"><div class="kl">Resultado Operacional (méd.)</div><div class="kv" style="color:var(--gr)">${fmt(PAINEL[4].media)}</div><div class="kd">antes de sócios</div></div>
+    <div class="kpi"><div class="kl">Custo Fixo / Sala (méd.)</div><div class="kv" style="color:#b0a9f9">R$ 17.043</div><div class="kd">÷ 9 salas</div></div>`;
+
+  dc('composicao');
+  charts['composicao']=new Chart(document.getElementById('c-composicao'),{type:'doughnut',
+    data:{labels:['Custo Fixo','Custo Variável','Remuneração Sócios','Resultado Operacional'],
+      datasets:[{data:[PAINEL[1].media,PAINEL[2].media,PAINEL[3].media,PAINEL[4].media],backgroundColor:['#fbbf24','#f87171','#b0a9f9','#4ade80'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{color:'#8e8da0',font:{size:10},boxWidth:10}},tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+fmtF(ctx.raw)}}}}});
+
+  dc('evolucao');
+  charts['evolucao']=new Chart(document.getElementById('c-evolucao'),{type:'bar',
+    data:{labels:MESES6,datasets:[
+      {label:'Receita',data:PAINEL[0].v,backgroundColor:'rgba(74,222,128,0.45)',borderRadius:4,borderWidth:0},
+      {label:'Custo Fixo',data:PAINEL[1].v,backgroundColor:'rgba(251,191,36,0.55)',borderRadius:4,borderWidth:0},
+      {label:'Custo Variável',data:PAINEL[2].v,backgroundColor:'rgba(248,113,113,0.45)',borderRadius:4,borderWidth:0},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8e8da0',font:{size:10},boxWidth:10}}},
+      scales:{x:{ticks:{color:'#4e4d60',font:{size:10}},grid:{display:false}},
+        y:{ticks:{color:'#4e4d60',font:{size:10},callback:v=>v>=1000000?'R$'+(v/1000000).toFixed(1)+'M':'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+
+  const tbl=document.getElementById('t-painel');
+  let head='<thead><tr><th>Categoria</th>'+MESES6.map(m=>`<th style="text-align:right">${m}</th>`).join('')+'<th style="text-align:right">Média</th><th style="text-align:right">Total</th></tr></thead>';
+  let body='<tbody>';
+  PAINEL.forEach(r=>{
+    body+=`<tr><td style="color:${r.cor}">${r.cat}</td>`+r.v.map(x=>`<td class="num">${fmt(x)}</td>`).join('')+`<td class="num" style="font-weight:600">${fmt(r.media)}</td><td class="num" style="font-weight:600">${fmt(r.total)}</td></tr>`;
+  });
+  PAINEL_IND.forEach(r=>{
+    body+=`<tr><td style="color:var(--t2);font-size:11px">${r.nome}</td>`+r.v.map(x=>`<td class="num" style="color:var(--t2)">${x}</td>`).join('')+`<td class="num" style="color:var(--t2)">${r.media}</td><td class="num"></td></tr>`;
+  });
+  body+='</tbody>';
+  tbl.innerHTML=head+body;
+}
+
+// ── DRE MENSAL ──────────────────────────────────────────────────
+function dreRowHtml(r){
+  const cls=r.tipo==='total'?'dre-total lvl0':r.tipo==='grupo'?'dre-group':r.tipo==='final'?'dre-final':'dre-detail';
+  const cells=r.v.map(x=>`<td class="num">${fmtF(x)}</td>`).join('');
+  return `<tr class="${cls}"><td>${r.lbl}</td>${cells}<td class="num">${fmtF(r.media)}</td><td class="num">${fmtF(r.acum)}</td><td class="num">${r.av}</td></tr>`;
+}
+function renderDreMensal(){
+  const head='<thead><tr><th>Demonstrativo de Resultado</th>'+DRE_MESES.map(m=>`<th style="text-align:right">${m}</th>`).join('')+'<th style="text-align:right">Média</th><th style="text-align:right">Acum.</th><th style="text-align:right">AV%</th></tr></thead>';
+  document.getElementById('t-dremensal').innerHTML=head+'<tbody>'+DRE.map(dreRowHtml).join('')+'</tbody>';
+  document.getElementById('t-memo').innerHTML=head+'<tbody>'+MEMO.map(dreRowHtml).join('')+'</tbody>';
+}
+
+// ── DRE JUNHO ───────────────────────────────────────────────────
+function renderDreJunho(){
+  const head='<thead><tr><th>Linha</th><th style="text-align:right">R$</th><th style="text-align:right">AV%</th><th>Observação</th></tr></thead>';
+  const body=DRE_JUNHO.map(r=>`<tr class="${r.bold?'dre-total lvl0':'dre-detail'}"><td${r.cor?` style="color:${r.cor}"`:''}>${r.lbl}</td><td class="num"${r.cor?` style="color:${r.cor}"`:''}>${fmtF(r.val)}</td><td class="num">${r.av}</td><td style="color:var(--t2);font-size:11px">${r.obs}</td></tr>`).join('');
+  document.getElementById('t-drejunho').innerHTML=head+'<tbody>'+body+'</tbody>';
+}
+
+// ── KPIS ────────────────────────────────────────────────────────
+function renderKpis(){
+  document.getElementById('kpi-be').innerHTML=`
+    <div class="kpi"><div class="kl">Contribuição da clínica</div><div class="kv">R$ 284.225</div><div class="kd">30.3% do faturamento</div></div>
+    <div class="kpi"><div class="kl">Resultado operacional</div><div class="kv" style="color:var(--gr)">R$ 130.836</div><div class="kd">14.0% do faturamento</div></div>
+    <div class="kpi"><div class="kl">Ponto de equilíbrio</div><div class="kv" style="color:var(--am)">${fmt(PONTO_EQUILIBRIO)}</div><div class="kd">faturamento mínimo p/ cobrir o fixo</div></div>`;
+  const el=document.getElementById('kpi-lista');
+  el.innerHTML=KPIS.map(k=>`
+    <div class="kpi-row">
+      <div class="kpi-name">${k.nome}<div class="kpi-meta">meta ${k.meta} · atenção ${k.atencao}</div></div>
+      <div class="kpi-vals"><span class="kpi-val">${k.valor}</span>${farolChip(k.farol)}</div>
+    </div>`).join('');
+}
+
+// ── MÉDICOS ─────────────────────────────────────────────────────
+function renderMedicos(){
+  const top=[...MEDICOS].sort((a,b)=>b.fat-a.fat);
+  dc('medicos');
+  charts['medicos']=new Chart(document.getElementById('c-medicos'),{type:'bar',
+    data:{labels:top.map(m=>m.nome.replace(/^Dr\.?a?\.? /,'')),datasets:[{data:top.map(m=>m.fat),backgroundColor:CORES[0],borderRadius:5,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtF(ctx.raw)}}},
+      scales:{x:{ticks:{color:'#4e4d60',font:{size:10},callback:v=>v>=1000?'R$'+(v/1000).toFixed(0)+'k':v},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#8e8da0',font:{size:10}},grid:{display:false}}}}});
+
+  const head='<thead><tr><th>Médico</th><th style="text-align:right">Faturamento</th><th style="text-align:right">Repasse</th><th style="text-align:right">% Repasse</th><th style="text-align:right">Contrib. Clínica</th><th style="text-align:right">% Contrib.</th></tr></thead>';
+  let body='<tbody>';
+  MEDICOS.forEach(m=>{body+=`<tr><td>${m.nome}</td><td class="num">${fmtF(m.fat)}</td><td class="num">${fmtF(m.repasse)}</td><td class="num">${m.pctRepasse}</td><td class="num" style="color:var(--gr)">${fmtF(m.contrib)}</td><td class="num">${m.pctContrib}</td></tr>`});
+  body+=`<tr class="tot-row"><td>TOTAL</td><td class="num">${fmtF(MEDICOS_TOTAL.fat)}</td><td class="num">${fmtF(MEDICOS_TOTAL.repasse)}</td><td class="num">${MEDICOS_TOTAL.pctRepasse}</td><td class="num" style="color:var(--gr)">${fmtF(MEDICOS_TOTAL.contrib)}</td><td class="num">${MEDICOS_TOTAL.pctContrib}</td></tr>`;
+  body+='</tbody>';
+  document.getElementById('t-medicos').innerHTML=head+body;
+}
+
+// ── LINHAS ──────────────────────────────────────────────────────
+function renderLinhas(){
+  dc('linhas-mix');
+  charts['linhas-mix']=new Chart(document.getElementById('c-linhas-mix'),{type:'doughnut',
+    data:{labels:LINHAS.map(l=>l.linha),datasets:[{data:LINHAS.map(l=>l.receita),backgroundColor:CORES,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{color:'#8e8da0',font:{size:9},boxWidth:8}},tooltip:{callbacks:{label:ctx=>' '+fmtF(ctx.raw)}}}}});
+
+  dc('linhas-margem');
+  charts['linhas-margem']=new Chart(document.getElementById('c-linhas-margem'),{type:'bar',
+    data:{labels:LINHAS.map(l=>l.linha.split(' (')[0]),datasets:[{data:LINHAS.map(l=>parseFloat(l.pctMargem)),backgroundColor:CORES,borderRadius:5,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.raw+'% margem'}}},
+      scales:{x:{min:0,max:100,ticks:{color:'#4e4d60',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#8e8da0',font:{size:9}},grid:{display:false}}}}});
+
+  const head='<thead><tr><th>Linha de negócio</th><th style="text-align:right">Qtd</th><th style="text-align:right">Receita</th><th style="text-align:right">% Mix</th><th style="text-align:right">Custo Material</th><th style="text-align:right">Margem Bruta</th><th style="text-align:right">% Margem</th></tr></thead>';
+  let body='<tbody>';
+  LINHAS.forEach(l=>{body+=`<tr><td>${l.linha}</td><td class="num">${fmtI(l.qtd)}</td><td class="num">${fmtF(l.receita)}</td><td class="num">${l.pctMix}</td><td class="num">${fmtF(l.custoMat)}</td><td class="num" style="color:var(--gr)">${fmtF(l.margem)}</td><td class="num">${l.pctMargem}</td></tr>`});
+  body+=`<tr class="tot-row"><td>TOTAL</td><td class="num">${fmtI(LINHAS_TOTAL.qtd)}</td><td class="num">${fmtF(LINHAS_TOTAL.receita)}</td><td class="num">100.0%</td><td class="num">${fmtF(LINHAS_TOTAL.custoMat)}</td><td class="num" style="color:var(--gr)">${fmtF(LINHAS_TOTAL.margem)}</td><td class="num">${LINHAS_TOTAL.pctMargem}</td></tr>`;
+  body+='</tbody>';
+  document.getElementById('t-linhas').innerHTML=head+body;
+}
+
+// ── SALAS ───────────────────────────────────────────────────────
+function renderSalas(){
+  const mediaIgual=SALAS_IGUAL.reduce((s,v)=>s+v,0)/SALAS_IGUAL.length;
+  const mediaClinica=SALAS_POND_CLINICA.reduce((s,v)=>s+v,0)/SALAS_POND_CLINICA.length;
+  const mediaNutri=SALAS_POND_NUTRI.reduce((s,v)=>s+v,0)/SALAS_POND_NUTRI.length;
+  document.getElementById('kpi-salas').innerHTML=`
+    <div class="kpi"><div class="kl">Visão A — rateio igual</div><div class="kv">${fmt(mediaIgual)}</div><div class="kd">por sala, qualquer uma (÷9)</div></div>
+    <div class="kpi"><div class="kl">Visão B — sala clínica</div><div class="kv" style="color:var(--ac2)">${fmt(mediaClinica)}</div><div class="kd">peso 1 (7 salas)</div></div>
+    <div class="kpi"><div class="kl">Visão B — sala nutrição</div><div class="kv" style="color:#b0a9f9">${fmt(mediaNutri)}</div><div class="kd">peso ${SALAS_PREM.pesoNutricao} (2 salas)</div></div>
+    <div class="kpi"><div class="kl">Custo Fixo Total (méd.)</div><div class="kv" style="color:var(--am)">${fmt(SALAS_CUSTO_FIXO.reduce((s,v)=>s+v,0)/SALAS_CUSTO_FIXO.length)}</div><div class="kd">Jan–Mai</div></div>`;
+
+  dc('salas');
+  charts['salas']=new Chart(document.getElementById('c-salas'),{type:'bar',
+    data:{labels:SALAS_MESES,datasets:[
+      {label:'Rateio igual (qualquer sala)',data:SALAS_IGUAL,backgroundColor:'rgba(124,111,247,0.55)',borderRadius:4,borderWidth:0},
+      {label:'Ponderada — clínica',data:SALAS_POND_CLINICA,backgroundColor:'rgba(78,205,196,0.55)',borderRadius:4,borderWidth:0},
+      {label:'Ponderada — nutrição',data:SALAS_POND_NUTRI,backgroundColor:'rgba(251,191,36,0.55)',borderRadius:4,borderWidth:0},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8e8da0',font:{size:10},boxWidth:10}}},
+      scales:{x:{ticks:{color:'#4e4d60',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#4e4d60',font:{size:10},callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+
+  const head='<thead><tr><th>Categoria</th>'+SALAS_MESES.map(m=>`<th style="text-align:right">${m}</th>`).join('')+'<th style="text-align:right">Média</th></tr></thead>';
+  const avg=arr=>arr.reduce((s,v)=>s+v,0)/arr.length;
+  let body='<tbody>';
+  body+=`<tr class="dre-total lvl0"><td>Custo Fixo Total (mês)</td>${SALAS_CUSTO_FIXO.map(v=>`<td class="num">${fmt(v)}</td>`).join('')}<td class="num">${fmt(avg(SALAS_CUSTO_FIXO))}</td></tr>`;
+  body+=`<tr class="dre-group"><td>Visão A — rateio igual (÷9 salas)</td>${SALAS_IGUAL.map(v=>`<td class="num">${fmt(v)}</td>`).join('')}<td class="num">${fmt(avg(SALAS_IGUAL))}</td></tr>`;
+  body+=`<tr class="dre-group"><td>Visão B — sala clínica (peso 1)</td>${SALAS_POND_CLINICA.map(v=>`<td class="num">${fmt(v)}</td>`).join('')}<td class="num">${fmt(avg(SALAS_POND_CLINICA))}</td></tr>`;
+  body+=`<tr class="dre-group"><td>Visão B — sala nutrição (peso ${SALAS_PREM.pesoNutricao})</td>${SALAS_POND_NUTRI.map(v=>`<td class="num">${fmt(v)}</td>`).join('')}<td class="num">${fmt(avg(SALAS_POND_NUTRI))}</td></tr>`;
+  body+='</tbody>';
+  document.getElementById('t-salas').innerHTML=head+body;
+}
+
+renderResumo();
+</script>
+</body>
+</html>
